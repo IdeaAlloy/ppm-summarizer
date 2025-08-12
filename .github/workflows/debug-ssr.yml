@@ -1,0 +1,37 @@
+name: Debug @supabase/ssr
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show package.json and lockfile presence
+        run: |
+          echo "=== package.json (deps) ==="
+          node -e "console.log(require('./package.json').dependencies)"
+          echo "=== Files at repo root ==="
+          ls -la
+          echo "=== package-lock.json head ==="
+          head -n 40 package-lock.json || true
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Clean install (uses lockfile)
+        run: npm ci
+
+      - name: Can Node resolve @supabase/ssr?
+        run: |
+          node -e "console.log('resolve:', require.resolve('@supabase/ssr/package.json'))"
+          echo "=== Installed @supabase/ssr package.json ==="
+          cat node_modules/@supabase/ssr/package.json
+
+      - name: Mini build probe (no export)
+        run: npm run build --if-present

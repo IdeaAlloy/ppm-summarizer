@@ -7,7 +7,7 @@ import NewProjectForm from './new-project-form';
 type ProjectRow = { id: string; name: string; created_at: string };
 
 export default async function Dashboard() {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
