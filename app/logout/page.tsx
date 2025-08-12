@@ -1,16 +1,14 @@
 'use client';
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 import { useEffect } from 'react';
+export const runtime = 'nodejs';
 
 export default function Logout() {
-  const supabase = createClientComponentClient();
-
   useEffect(() => {
-    supabase.auth.signOut().finally(() => {
+    supabaseBrowser.auth.signOut().finally(() => {
       window.location.href = '/';
     });
-  }, [supabase]); // include dependency to satisfy react-hooks/exhaustive-deps
-
+  }, []);
   return <p style={{ padding: 24 }}>Signing you out…</p>;
 }

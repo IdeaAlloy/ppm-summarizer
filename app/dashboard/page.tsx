@@ -1,21 +1,14 @@
-export const runtime = 'nodejs'; // ensure Node runtime (avoids Edge warnings)
+export const runtime = 'nodejs';
 
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase-server';
 import NewProjectForm from './new-project-form';
 
-type ProjectRow = {
-  id: string;
-  name: string;
-  created_at: string; // Supabase returns ISO timestamps as strings
-};
+type ProjectRow = { id: string; name: string; created_at: string };
 
 export default async function Dashboard() {
   const supabase = supabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
   const { data, error } = await supabase
