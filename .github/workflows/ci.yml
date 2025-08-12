@@ -1,7 +1,12 @@
-# (paste the YAML, save with Ctrl+O, Enter, exit with Ctrl+X)name: CI
+name: CI
 
-on: pull_request: push: git add .github/workflows/ci.yml branches: [main] git commit -m "ci: merge sanity checks with 
-lint/test/build" concurrency: git push group: ci-${{ github.workflow }}-${{ github.ref }}
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
