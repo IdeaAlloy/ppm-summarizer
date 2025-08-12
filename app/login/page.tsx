@@ -1,5 +1,8 @@
 'use client';
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
+'use client';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { useState } from 'react';
 
@@ -17,6 +20,7 @@ export default function LoginPage() {
     if (error) alert(error.message);
     else setSent(true);
   }
+  
 
   return (
     <main style={{ padding: 24 }}>
