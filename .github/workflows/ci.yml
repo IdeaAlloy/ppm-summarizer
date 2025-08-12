@@ -1,12 +1,50 @@
-name: CI
+# (paste the YAML, save with Ctrl+O, Enter, exit with Ctrl+X)name: CI
 
-on:
-  pull_request:
-  push:
-    branches: [ main ]
+on: pull_request: push: git add .github/workflows/ci.yml branches: [main] git commit -m "ci: merge sanity checks with 
+lint/test/build" concurrency: git push group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  node-ci:
+  sanity:
+    name: Pre‑Vercel Sanity
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure single lockfile (npm only)
+        run: |
+          if [ -f yarn.lock ] || [ -f pnpm-lock.yaml ]; then
+            echo "::error::Found multiple lockfiles. Keep only package-lock.json for npm builds."
+            ls -la
+            exit 1
+          fi
+          if [ ! -f package-lock.json ]; then
+            echo "::error::package-lock.json missing. Run 'npm install' locally and commit the lockfile."
+            exit 1
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Clean install (uses lockfile)
+        run: npm ci
+
+      - name: Verify critical deps resolve (@supabase/ssr, next, react)
+        run: |
+          node -e "const deps=require('./package.json').dependencies||{}; const want=['@supabase/ssr','@supabase/supabase-js','next','react','react-dom']; let fail=0; for (const pkg of want){ if (deps[pkg]){ try{ require.resolve(pkg); console.log('OK:',pkg);}catch(e){ console.log('MISSING:',pkg); fail=1; } } else { console.log('SKIP (not in deps):',pkg);} } process.exit(fail);"
+
+      - name: Show top-level dependency tree
+        run: npm ls --depth=0 || true
+
+  build_test:
+    name: Lint • Test • Build
+    needs: sanity
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -20,7 +58,7 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Install deps
+      - name: Install (ci)
         run: npm ci
 
       - name: Lint
@@ -29,5 +67,16 @@ jobs:
       - name: Test
         run: npm test --if-present
 
-      - name: Build
+      - name: Build (Next.js)
         run: npm run build --if-present
+
+      - name: Upload build output (debugging)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: |
+            .next
+            dist
+            build
+          if-no-files-found: ignore
